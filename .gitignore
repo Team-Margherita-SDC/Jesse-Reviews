@@ -1,0 +1,15 @@
+###OSX###
+.DS_Store
+
+###NODE###
+node_modules
+public/app.js
+
+###TOKENS###
+config.js
+
+###VS CODE SETTINGS###
+.vscode/settings.json
+
+###bulk Data###
+Data
