@@ -4,14 +4,14 @@ const config = require("../config.js");
 const app = express();
 const PORT = 3000;
 const db = require("./../Database/index.js");
-const { connect, get } = require("./../Database/index.js");
+const { connect, getReviews, getMetaReviews } = require("./../Database/index.js");
 
 // app.use(express.static(path.join(__dirname, "..", "public")));
 app.use(express.json());
 
 //params: page, count, sort, product_id
 app.get('/reviews', (req, res) => {
-  get(req.query, (err, results)=>{
+  getReviews(req.query, (err, results)=>{
     if (err) {
       res.sendStatus(404)
     }
@@ -22,7 +22,16 @@ app.get('/reviews', (req, res) => {
 })
 
 //params: product_id
-app.get('/reviews/meta')
+app.get('/reviews/meta', (req, res) => {
+  getMetaReviews(req.query, (err, results)=>{
+    if (err) {
+      res.sendStatus(404)
+    }
+    if(results) {
+      res.status(200).send(results)
+    }
+  })
+})
 
 //params: product_id, rating, summary, body, recommend, name, email, photos, characteristics, probably need to add a date as well
 app.post('/reviews')

@@ -22,7 +22,7 @@ async function connect(cb) {
   }
 }
 //create database queries in here
-async function get(params, cb) {
+async function getReviews(params, cb) {
   let product_id = Number(params.product_id);
   let count = Number(params.count) || 5;
   let page = Number(params.page) || 0;
@@ -70,6 +70,68 @@ async function get(params, cb) {
 
 }
 
+const characteristicsBuilder = function (allCharReviews) {
+  let charDetailsContainer = {};
+
+  allCharReviews.forEach((oneCharReview)=>{
+    if (!charDetailsContainer[oneCharReview.name]) {
+      charDetailsContainer[oneCharReview.name] = {
+        id: oneCharReview.characteristic_id,
+        value: oneCharReview.value,
+        count: 1
+      }
+    } else {
+      charDetailsContainer[oneCharReview.name].value += oneCharReview.value;
+      charDetailsContainer[oneCharReview.name].count++
+    }
+  })
+  for (var characteristic in charDetailsContainer) {
+    charDetailsContainer[characteristic].value = charDetailsContainer[characteristic].value / charDetailsContainer[characteristic].count;
+    delete charDetailsContainer[characteristic].count;
+  }
+  return charDetailsContainer
+}
+
+async function getMetaReviews(params, cb) {
+  let product_id = Number(params.product_id);
+  let reviewsMetaStructure = {
+    product_id: product_id,
+    ratings: {
+      1: 0,
+      2: 0,
+      3: 0,
+      4: 0,
+      5: 0
+    },
+    recommended: {
+      false: 0,
+      true: 0
+    },
+    characteristics: {
+    }
+  }
+
+  metaReviewsCollection.find({ "product_id": product_id }).toArray()
+    .then((results) => {
+      let allCharReviews = [];
+      results.forEach((oneReview) => {
+        if (oneReview.reported === 'false') {
+          let ratingKey = oneReview.rating.toString();
+          reviewsMetaStructure.ratings[ratingKey]++;
+          reviewsMetaStructure.recommended[oneReview.recommend] ++;
+          oneReview.characteristic_reviews.forEach((oneCharReview)=>{
+            allCharReviews.push(oneCharReview)
+          })
+        }
+      })
+      reviewsMetaStructure.characteristics = characteristicsBuilder(allCharReviews);
+      cb(null, reviewsMetaStructure)
+    })
+    .catch((err) => {
+      cb(err, null)
+    })
+
+}
 
 function close() {
   mongodb.close();
@@ -77,7 +139,8 @@ function close() {
 
 module.exports = {
   connect,
-  get,
+  getReviews,
+  getMetaReviews,
   close
 };
 
