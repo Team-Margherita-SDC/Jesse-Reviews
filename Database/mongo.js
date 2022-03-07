@@ -1,4 +1,4 @@
-
+//---------firstpart of connection code -----------
 const { MongoClient } = require('mongodb');
 const config = require('./../config.js');
 
@@ -12,6 +12,7 @@ async function run() {
     await client.connect();
 
     const db = client.db(dbName);
+ //---------end of first part of connection code ------
 
     //---------code for merging characteristics and characteristic reviews (4 steps) -------
 
@@ -37,19 +38,19 @@ async function run() {
     //end of code for merging characteristics and characteristic reviews
 
     //--------(step 3) code for merging reviews with characteristic_reviews
-    const reviews = db.collection('reviews_source');
-    const merged_characteristics = db.collection('merged_characteristics');
-    const testing = await reviews.aggregate([
-      {
-        $lookup: {
-          from: "merged_characteristics",
-          localField: "id",
-          foreignField: "review_id",
-          as: "characteristic_reviews"
-        }
-      },
-      { $out: "reviews_characteristics_merged" }
-    ]);
+    // const reviews = db.collection('reviews_source');
+    // const merged_characteristics = db.collection('merged_characteristics');
+    // const testing = await reviews.aggregate([
+    //   {
+    //     $lookup: {
+    //       from: "merged_characteristics",
+    //       localField: "id",
+    //       foreignField: "review_id",
+    //       as: "characteristic_reviews"
+    //     }
+    //   },
+    //   { $out: "reviews_characteristics_merged" }
+    // ]);
 
     //--------end of code for merging reviews with characteristic_reviews
     //(step 4)Run the scripts that modify the reviews table to match characteristics
@@ -69,6 +70,7 @@ async function run() {
     //   { $out: "merged_reviews" }
     // ]);
     //-----------end of code for merging reviews and photos ---------
+    //--second part of connection code-------
     await testing.forEach((doc) => {
       if (doc.id == 5) {
         console.dir(doc)
@@ -80,6 +82,7 @@ async function run() {
   }
 }
 run().catch(console.dir);
+//--------end of connection code -------
 
 //--------command line inputs ---------
 //--------------------------------------

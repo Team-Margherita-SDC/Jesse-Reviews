@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node Database/mongo.js"
+    "database-setup": "node Database/mongo.js",
+    "database-start": "node Database/index.js",
+    "start-server": "nodemon Server/index.js"
   },
   "keywords": [],
   "author": "",
@@ -13,7 +15,8 @@
   "dependencies": {
     "danfojs-node": "^1.0.2",
     "express": "^4.17.3",
-    "mongodb": "^4.4.0",
-    "mongoose": "^6.2.4"
+    "mongodb": "^4.4.1",
+    "mongoose": "^6.2.4",
+    "nodemon": "^2.0.15"
   }
 }
