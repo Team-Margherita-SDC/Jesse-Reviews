@@ -72,8 +72,14 @@ async function getReviews(params, cb) {
 
 const characteristicsBuilder = function (allCharReviews) {
   let charDetailsContainer = {};
+  let noNameChar = [];
 
   allCharReviews.forEach((oneCharReview)=>{
+    //the front end didnt provide character name on new review submission
+    let charName;
+    if (!oneCharReview.name) {
+      noNameChar.push(oneCharReview);
+    }
     if (!charDetailsContainer[oneCharReview.name]) {
       charDetailsContainer[oneCharReview.name] = {
         id: oneCharReview.characteristic_id,
@@ -85,8 +91,20 @@ const characteristicsBuilder = function (allCharReviews) {
       charDetailsContainer[oneCharReview.name].count++
     }
   })
+
+  if (noNameChar.length > 0) {
+    noNameChar.forEach((oneNoNameChar)=> {
+      let id = oneNoNameChar.id;
+      for (var key in charDetailsContainer) {
+        if (charDetailsContainer[key].id === id) {
+          charDetailsContainer[key].value += oneNoNameChar.value;
+          charDetailsContainer[key].count ++
+        }
+      }
+    })
+  }
   for (var characteristic in charDetailsContainer) {
-    charDetailsContainer[characteristic].value = charDetailsContainer[characteristic].value / charDetailsContainer[characteristic].count;
+    charDetailsContainer[characteristic].value = (charDetailsContainer[characteristic].value / charDetailsContainer[characteristic].count).toString();
     delete charDetailsContainer[characteristic].count;
   }
   return charDetailsContainer
@@ -95,7 +113,7 @@ const characteristicsBuilder = function (allCharReviews) {
 async function getMetaReviews(params, cb) {
   let product_id = Number(params.product_id);
   let reviewsMetaStructure = {
-    product_id: product_id,
+    product_id: 0,
     ratings: {
       1: 0,
       2: 0,
@@ -114,6 +132,7 @@ async function getMetaReviews(params, cb) {
   metaReviewsCollection.find({ "product_id": product_id }).toArray()
     .then((results) => {
       let allCharReviews = [];
+      reviewsMetaStructure.product_id = product_id.toString();
       results.forEach((oneReview) => {
         if (oneReview.reported === 'false') {
           let ratingKey = oneReview.rating.toString();
@@ -124,12 +143,111 @@ async function getMetaReviews(params, cb) {
           })
         }
       })
-      reviewsMetaStructure.characteristics = characteristicsBuilder(allCharReviews);
+      for (var numRating in reviewsMetaStructure.ratings) {
+        reviewsMetaStructure.ratings[numRating] = reviewsMetaStructure.ratings[numRating].toString()
+      }
+      reviewsMetaStructure.characteristics = characteristicsBuilder(allCharReviews)
       cb(null, reviewsMetaStructure)
     })
     .catch((err) => {
       cb(err, null)
     })
+}
+
+async function addReview(params, cb) {
+  let defaultproductid = params.product_id;
+  let defaultrating = params.rating || null;
+  let defaultsummary = params.summary || null;
+  let defaultbody = params.body || null;
+  let defaultrecommend = params.recommend || null;
+  let defaultname = params.name || null;
+  let defaultemail = params.email || null;
+  let defaultphotos = params.photos || null;
+  let defaultcharacteristics = params.characteristics || null;
+  let nextReviewID;
+  let defaultnewReviewContainer = {
+    id: nextReviewID,
+    product_id: defaultproductid,
+    rating: defaultrating,
+    date: Date.now(),
+    summary: defaultsummary,
+    body: defaultbody,
+    recommend: defaultrecommend,
+    reported: false,
+    reviewer_name: defaultname,
+    reviewer_email: defaultemail,
+    photos: defaultphotos
+  }
+  let newMetaReviewContainer = {
+    id: nextReviewID,
+    product_id: defaultproductid,
+    rating: defaultrating,
+    recommend: defaultrecommend,
+    reported: false,
+    characteristic_reviews: []
+  }
+
+  reviewsCollection.find({}).sort({product_id: -1}).limit(1).toArray()
+  .then((results)=>{
+    // console.log('results.id: ', typeof results[0].id)
+    nextReviewID = results[0].id + 1;
+    defaultnewReviewContainer.id = nextReviewID;
+    newMetaReviewContainer.id = nextReviewID;
+  })
+  .then(()=>{
+    reviewsCollection.insertOne(defaultnewReviewContainer)
+    .then((result)=>{
+      metaReviewsCollection.insertOne(newMetaReviewContainer)
+      .then((results)=> {
+        cb(null, results)
+      })
+      .catch((err)=>{
+        cb(err, null)
+      })
+    })
+    .catch((err)=>{
+      cb(err, null)
+    })
+  })
+  .catch((err)=> {
+    //figure out what to do here
+    console.log('unable to add new review')
+  })
+
+  const characteristicBuilder = function(reviewID, charID, charValue) {
+    let newCharacteristicReview = {
+      id: reviewID,
+      characteristic_id: charID,
+      value: charValue,
+      name: null
+    }
+    newMetaReviewContainer.characteristic_reviews.push(newCharacteristicReview)
+  }
+
+  if (defaultcharacteristics) {
+    for (var key in defaultcharacteristics) {
+      let currentCharacteristicID = key;
+      let currentCharacteristicValue = defaultcharacteristics[key];
+      characteristicBuilder(nextReviewID, currentCharacteristicID, currentCharacteristicValue)
+    }
+  }
+
+
+  // reviewsCollection.find({ "product_id": defaultproductid }).toArray()
+  //   .then((results) => {
+  //     let sortedResults = results;
+  //     let reviewsStructure = {
+  //       product: '',
+  //       page: 0,
+  //       count: 0,
+  //       results: []
+  //     }
+
+  //     cb(null, reviewsStructure)
+  //   })
+  //   .catch((err) => {
+  //     cb(err, null)
+  //   })
 
 }
 
@@ -141,7 +259,8 @@ module.exports = {
   connect,
   getReviews,
   getMetaReviews,
-  close
+  close,
+  addReview
 };
 
 

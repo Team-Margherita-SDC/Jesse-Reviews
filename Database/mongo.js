@@ -96,6 +96,8 @@ run().catch(console.dir);
 
 //creating indexes on a duplicate key:
 //db.reviews_characteristics_merged.createIndex({ "product_id": 1 }, {"unique": false})
+//on unique key
+// db.merged_reviews.createIndex({ "id": 1 }, {"unique": true})
 
 //searching an indexed key and verifying it only searched the relevant files
 //db.reviews.find( {"product_id":12}).explain("executionStats")
