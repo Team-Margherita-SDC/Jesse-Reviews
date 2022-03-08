@@ -235,8 +235,18 @@ async function addReview(params, cb) {
 
 async function addHelpful(params, cb) {
   let reviewID = Number(params.review_id);
-  console.log(reviewID)
   reviewsCollection.updateOne({ "id": reviewID}, {$inc: {helpfulness: 1}}, {upsert: true})
+    .then((results) => {
+      cb(null, results)
+    })
+    .catch((err) => {
+      cb(err, null)
+    })
+}
+
+async function reportReview(params, cb) {
+  let reviewID = Number(params.review_id);
+  reviewsCollection.updateOne({ "id": reviewID}, {$set: {reported: true}}, {upsert: true})
     .then((results) => {
       cb(null, results)
     })
@@ -254,7 +264,9 @@ module.exports = {
   getReviews,
   getMetaReviews,
   close,
-  addReview, addHelpful
+  addReview,
+  addHelpful,
+  reportReview
 };
 
 
