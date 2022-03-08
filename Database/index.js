@@ -134,8 +134,9 @@ async function getMetaReviews(params, cb) {
       let allCharReviews = [];
       reviewsMetaStructure.product_id = product_id.toString();
       results.forEach((oneReview) => {
-        if (oneReview.reported === 'false') {
+        if (oneReview.reported === 'false' || oneReview.reported === false) {
           let ratingKey = oneReview.rating.toString();
+          console.log(results.length, ratingKey, oneReview.id)
           reviewsMetaStructure.ratings[ratingKey]++;
           reviewsMetaStructure.recommended[oneReview.recommend] ++;
           oneReview.characteristic_reviews.forEach((oneCharReview)=>{
@@ -156,7 +157,7 @@ async function getMetaReviews(params, cb) {
 
 async function addReview(params, cb) {
   let defaultproductid = params.product_id;
-  let defaultrating = params.rating || null;
+  let defaultrating = Number(params.rating) || null;
   let defaultsummary = params.summary || null;
   let defaultbody = params.body || null;
   let defaultrecommend = params.recommend || null;
@@ -167,7 +168,7 @@ async function addReview(params, cb) {
   let nextReviewID;
   let defaultnewReviewContainer = {
     id: nextReviewID,
-    product_id: defaultproductid,
+    product_id: Number(defaultproductid),
     rating: defaultrating,
     date: Date.now(),
     summary: defaultsummary,
@@ -180,16 +181,15 @@ async function addReview(params, cb) {
   }
   let newMetaReviewContainer = {
     id: nextReviewID,
-    product_id: defaultproductid,
+    product_id: Number(defaultproductid),
     rating: defaultrating,
     recommend: defaultrecommend,
     reported: false,
     characteristic_reviews: []
   }
 
-  reviewsCollection.find({}).sort({product_id: -1}).limit(1).toArray()
+  reviewsCollection.find({}).sort({id: -1}).limit(1).toArray()
   .then((results)=>{
-    // console.log('results.id: ', typeof results[0].id)
     nextReviewID = results[0].id + 1;
     defaultnewReviewContainer.id = nextReviewID;
     newMetaReviewContainer.id = nextReviewID;
@@ -211,7 +211,7 @@ async function addReview(params, cb) {
   })
   .catch((err)=> {
     //figure out what to do here
-    console.log('unable to add new review')
+    console.log('unable to retrieve nextID')
   })
 
   const characteristicBuilder = function(reviewID, charID, charValue) {
@@ -231,24 +231,18 @@ async function addReview(params, cb) {
       characteristicBuilder(nextReviewID, currentCharacteristicID, currentCharacteristicValue)
     }
   }
+}
 
-
-  // reviewsCollection.find({ "product_id": defaultproductid }).toArray()
-  //   .then((results) => {
-  //     let sortedResults = results;
-  //     let reviewsStructure = {
-  //       product: '',
-  //       page: 0,
-  //       count: 0,
-  //       results: []
-  //     }
-
-  //     cb(null, reviewsStructure)
-  //   })
-  //   .catch((err) => {
-  //     cb(err, null)
-  //   })
-
+async function addHelpful(params, cb) {
+  let reviewID = Number(params.review_id);
+  console.log(reviewID)
+  reviewsCollection.updateOne({ "id": reviewID}, {$inc: {helpfulness: 1}}, {upsert: true})
+    .then((results) => {
+      cb(null, results)
+    })
+    .catch((err) => {
+      cb(err, null)
+    })
 }
 
 function close() {
@@ -260,45 +254,8 @@ module.exports = {
   getReviews,
   getMetaReviews,
   close,
-  addReview
+  addReview, addHelpful
 };
 
 
 
-
-// const { MongoClient } = require('mongodb');
-// const config = require('./../config.js');
-
-// // Replace the uri string with your MongoDB deployment's connection string.
-// const uri = 'mongodb://localhost/27017';
-// const dbName = 'SDC';
-// const client = new MongoClient(uri);
-// let reviewsCollection;
-// let metaReviewsCollection;
-// let db;
-
-// async function run() {
-//   try {
-//     await client.connect();
-//     db = client.db(dbName);
-//     reviewsCollection = db.collection('merged_reviews');
-//     reviewsCollection = db.collection('reviews_characteristics_merged');
-
-//   //place queries here
-//     // await testing.forEach((doc) => {
-//     //   if (doc.id == 5) {
-//     //     console.dir(doc)
-//     //   }
-//     // });
-
-//   } finally {
-//     await client.close();
-//   }
-// }
-// run().catch(console.dir);
-
-// module.exports.db = db;
-// module.exports.connect = run;
-// module.exports.client = client;
-// module.exports.reviewsCollection = reviewsCollection;
-// module.exports.metaReviewsCollection = metaReviewsCollection;

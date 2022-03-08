@@ -4,7 +4,7 @@ const config = require("../config.js");
 const app = express();
 const PORT = 3000;
 const db = require("./../Database/index.js");
-const { connect, getReviews, getMetaReviews, addReview } = require("./../Database/index.js");
+const { connect, getReviews, getMetaReviews, addReview, addHelpful } = require("./../Database/index.js");
 
 // app.use(express.static(path.join(__dirname, "..", "public")));
 app.use(express.json());
@@ -38,13 +38,22 @@ app.post('/reviews', (req, res) => {
       res.sendStatus(404)
     }
     if(results) {
-      res.status(200).send(results)
+      res.status(201).send(results)
     }
   })
 })
 
 //params: review_id
-app.put('/reviews/:review_id/helpful')
+app.put('/reviews/:review_id/helpful', (req, res) => {
+  addHelpful(req.query, (err, results)=>{
+    if (err) {
+      res.sendStatus(404)
+    }
+    if(results) {
+      res.status(201).send(results)
+    }
+  })
+})
 
 //params: review_id
 app.put('reviews/:review_id/report')
