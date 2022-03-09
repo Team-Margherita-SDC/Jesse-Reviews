@@ -1,0 +1,12 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 10
+      arrivalRate: 300
+      # rampTo: 1000
+      name: SDC database
+scenarios:
+  - name: "Get review"
+    flow:
+      - get:
+          url: "/reviews/meta?product_id={$randomNumber(1,1000000)}"
