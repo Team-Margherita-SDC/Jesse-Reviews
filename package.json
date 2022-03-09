@@ -18,5 +18,8 @@
     "mongodb": "^4.4.1",
     "mongoose": "^6.2.4",
     "nodemon": "^2.0.15"
+  },
+  "devDependencies": {
+    "artillery": "^2.0.0-12"
   }
 }

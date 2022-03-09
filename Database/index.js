@@ -136,7 +136,6 @@ async function getMetaReviews(params, cb) {
       results.forEach((oneReview) => {
         if (oneReview.reported === 'false' || oneReview.reported === false) {
           let ratingKey = oneReview.rating.toString();
-          console.log(results.length, ratingKey, oneReview.id)
           reviewsMetaStructure.ratings[ratingKey]++;
           reviewsMetaStructure.recommended[oneReview.recommend] ++;
           oneReview.characteristic_reviews.forEach((oneCharReview)=>{
@@ -210,8 +209,7 @@ async function addReview(params, cb) {
     })
   })
   .catch((err)=> {
-    //figure out what to do here
-    console.log('unable to retrieve nextID')
+    cb(err, null)
   })
 
   const characteristicBuilder = function(reviewID, charID, charValue) {
